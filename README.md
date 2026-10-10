@@ -15,12 +15,12 @@ The plugin exposes streams for direct playback; it does not relay or transcode a
 
 ## Compatibility and requirements
 
-- Jellyfin Server **10.10.7**.
-- .NET 8 SDK to build from source.
+- Jellyfin Server **10.11.11**.
+- .NET 9 SDK to build from source.
 - An HTTP or HTTPS MP3-compatible radio stream.
 - Network access to the stream from the Jellyfin playback path and to web-hosted logos from the Jellyfin server or client.
 
-This plugin is built against Jellyfin 10.10.7. Other Jellyfin versions are not currently certified.
+This plugin is built against Jellyfin 10.11.11. Other Jellyfin versions are not currently certified.
 
 ## Install
 
@@ -28,7 +28,7 @@ The project currently provides a build-from-source/manual installation; it is no
 
 ### 1. Build the plugin
 
-Install the .NET 8 SDK, clone this repository, and run the following from the repository root:
+Install the .NET 9 SDK, clone this repository, and run the following from the repository root:
 
 ```powershell
 dotnet build .\Jellyfin.Plugin.RadioStreaming.sln --configuration Release
@@ -37,12 +37,12 @@ dotnet build .\Jellyfin.Plugin.RadioStreaming.sln --configuration Release
 The plugin assembly is:
 
 ```text
-src\Jellyfin.Plugin.RadioStreaming\bin\Release\net8.0\Jellyfin.Plugin.RadioStreaming.dll
+src\Jellyfin.Plugin.RadioStreaming\bin\Release\net9.0\Jellyfin.Plugin.RadioStreaming.dll
 ```
 
 ### 2. Copy it to Jellyfin's plugin directory
 
-Stop Jellyfin, create a `RadioStreaming` folder under the server's `plugins` directory, and copy `Jellyfin.Plugin.RadioStreaming.dll` into that folder. The plugin directory depends on how Jellyfin was installed. Common locations include:
+Stop Jellyfin, create a `RadioStreaming` folder under the server's `plugins` directory, and copy `Jellyfin.Plugin.RadioStreaming.dll` from the Release build output into that folder. The plugin directory depends on how Jellyfin was installed. Common locations include:
 
 | Installation | Plugin directory |
 | --- | --- |
@@ -51,7 +51,7 @@ Stop Jellyfin, create a `RadioStreaming` folder under the server's `plugins` dir
 | Debian/Ubuntu Linux | `/var/lib/jellyfin/plugins/RadioStreaming` |
 | Docker | `<host-config-directory>/plugins/RadioStreaming` (mounted as `/config/plugins/RadioStreaming` in the container) |
 
-If your server uses a custom data directory, use its `plugins` folder instead. Make sure the Jellyfin service account can read the plugin folder and DLL. Start or restart Jellyfin after copying the file.
+If your server uses a custom data directory, use its `plugins` folder instead. Make sure the Jellyfin service account can read the plugin folder and DLL. Start or restart Jellyfin after copying the file. Use a build targeting the same Jellyfin release as your server; this repository currently targets 10.11.11.
 
 ### 3. Confirm the plugin loaded
 
