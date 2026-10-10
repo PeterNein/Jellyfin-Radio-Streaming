@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Radio Streaming</title>
+    <style>
+        .radio-station {
+            border: 1px solid rgba(255, 255, 255, .2);
+            border-radius: .4em;
+            margin: 1em 0;
+            padding: 1em;
+        }
+
+        .radio-station h3 {
+            margin-top: 0;
+        }
+
+        .radio-actions {
+            display: flex;
+            gap: .75em;
+            margin: 1em 0;
+        }
+
+        .radio-message {
+            margin: 1em 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="RadioStreamingConfigPage" data-role="page" class="page type-interior pluginConfigurationPage"
+         data-require="emby-input,emby-button">
+        <div data-role="content">
+            <div class="content-primary">
+                <h1>Radio Streaming</h1>
+                <p>Manage MP3-compatible HTTP or HTTPS streams. Stations appear in Jellyfin under Radio Stations.
+                    Use Jellyfin's favorite control on a station to save it to the current user's favorites.</p>
+                <p>For a logo, enter an HTTP(S) image URL or an absolute file path readable by the Jellyfin server.</p>
+                <div id="RadioMessage" class="radio-message" role="status" aria-live="polite"></div>
+                <form id="RadioStationsForm">
+                    <div id="RadioStations"></div>
+                    <div class="radio-actions">
+                        <button is="emby-button" type="button" id="AddStation" class="raised emby-button">
+                            <span>Add station</span>
+                        </button>
+                        <button is="emby-button" type="submit" class="raised button-submit emby-button">
+                            <span>Save stations</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <script type="text/javascript">
+            (function () {
+                const pluginId = 'bb92891c-771f-4e6b-a62f-98351b01683e';
+                const page = document.querySelector('#RadioStreamingConfigPage');
+                const form = document.querySelector('#RadioStationsForm');
+                const stationList = document.querySelector('#RadioStations');
+                const message = document.querySelector('#RadioMessage');
+
+                function makeId() {
+                    return typeof crypto.randomUUID === 'function'
+                        ? crypto.randomUUID()
+                        : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (character) {
+                            const random = Math.random() * 16 | 0;
+                            return (character === 'x' ? random : (random & 3 | 8)).toString(16);
+                        });
+                }
+
+                function addField(container, labelText, property, value, required, multiline) {
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'inputContainer';
+                    const label = document.createElement('label');
+                    label.className = 'inputLabel';
+                    label.textContent = labelText;
+                    const input = document.createElement(multiline ? 'textarea' : 'input');
+                    input.className = 'emby-input';
+                    input.dataset.property = property;
+                    input.value = value || '';
+                    input.required = required;
+                    label.htmlFor = 'station-' + property + '-' + makeId();
+                    input.id = label.htmlFor;
+                    wrapper.append(label, input);
+                    container.append(wrapper);
+                }
+
+                function addStation(station) {
+                    const card = document.createElement('section');
+                    card.className = 'radio-station';
+                    card.dataset.id = station.Id || makeId();
+
+                    const title = document.createElement('h3');
+                    title.textContent = station.Name || 'New station';
+                    card.append(title);
+                    addField(card, 'Station name', 'Name', station.Name, true, false);
+                    addField(card, 'MP3 stream URL (HTTP or HTTPS)', 'StreamUrl', station.StreamUrl, true, false);
+                    addField(card, 'Logo URL or absolute server file path (optional)', 'Logo', station.Logo, false, false);
+                    addField(card, 'Description (optional)', 'Description', station.Description, false, true);
+
+                    const remove = document.createElement('button');
+                    remove.type = 'button';
+                    remove.className = 'raised emby-button';
+                    remove.textContent = 'Remove station';
+                    remove.addEventListener('click', function () {
+                        card.remove();
+                    });
+                    card.append(remove);
+                    stationList.append(card);
+                }
+
+                function showError(error) {
+                    message.textContent = 'Unable to save or load stations: ' + (error && error.message ? error.message : error);
+                    message.className = 'radio-message notification';
+                    Dashboard.hideLoadingMsg();
+                }
+
+                page.addEventListener('pageshow', function () {
+                    Dashboard.showLoadingMsg();
+                    message.textContent = '';
+                    ApiClient.getPluginConfiguration(pluginId).then(function (config) {
+                        stationList.replaceChildren();
+                        (config.Stations || []).forEach(addStation);
+                        Dashboard.hideLoadingMsg();
+                    }).catch(showError);
+                });
+
+                document.querySelector('#AddStation').addEventListener('click', function () {
+                    addStation({ Id: makeId() });
+                });
+
+                form.addEventListener('submit', function (event) {
+                    event.preventDefault();
+                    const stations = Array.from(stationList.querySelectorAll('.radio-station')).map(function (card) {
+                        const station = { Id: card.dataset.id };
+                        card.querySelectorAll('[data-property]').forEach(function (input) {
+                            station[input.dataset.property] = input.value.trim();
+                        });
+                        return station;
+                    });
+                    const invalidStream = stations.find(function (station) {
+                        try {
+                            const url = new URL(station.StreamUrl);
+                            return url.protocol !== 'http:' && url.protocol !== 'https:';
+                        } catch {
+                            return true;
+                        }
+                    });
+                    if (invalidStream) {
+                        showError('Each station needs a valid HTTP or HTTPS stream URL.');
+                        return;
+                    }
+
+                    Dashboard.showLoadingMsg();
+                    message.textContent = '';
+                    ApiClient.getPluginConfiguration(pluginId).then(function (config) {
+                        config.Stations = stations;
+                        return ApiClient.updatePluginConfiguration(pluginId, config);
+                    }).then(function (result) {
+                        Dashboard.processPluginConfigurationUpdateResult(result);
+                    }).catch(showError);
+                });
+            }());
+        </script>
+    </div>
+</body>
+</html>
