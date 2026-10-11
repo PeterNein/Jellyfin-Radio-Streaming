@@ -24,9 +24,19 @@ This plugin is built against Jellyfin 10.11.11. Other Jellyfin versions are not 
 
 ## Install
 
-The project currently provides a build-from-source/manual installation; it is not yet published in the Jellyfin plugin catalog.
+### Install from the third-party repository
 
-### 1. Build the plugin
+The plugin is available through its third-party repository. In Jellyfin, open **Dashboard > Plugins > Repositories**, add this manifest URL, then find **Radio Streaming** in the plugin catalog:
+
+```text
+https://raw.githubusercontent.com/PeterNein/Jellyfin-Radio-Streaming/master/manifest.json
+```
+
+This is a third-party repository, not part of Jellyfin's official plugin repository.
+
+### Build and install manually
+
+#### 1. Build the plugin
 
 Install the .NET 9 SDK, clone this repository, and run the following from the repository root:
 
@@ -40,7 +50,7 @@ The plugin assembly is:
 src\Jellyfin.Plugin.RadioStreaming\bin\Release\net9.0\Jellyfin.Plugin.RadioStreaming.dll
 ```
 
-### 2. Copy it to Jellyfin's plugin directory
+#### 2. Copy it to Jellyfin's plugin directory
 
 Stop Jellyfin, create a `RadioStreaming` folder under the server's `plugins` directory, and copy `Jellyfin.Plugin.RadioStreaming.dll` from the Release build output into that folder. The plugin directory depends on how Jellyfin was installed. Common locations include:
 
@@ -53,7 +63,7 @@ Stop Jellyfin, create a `RadioStreaming` folder under the server's `plugins` dir
 
 If your server uses a custom data directory, use its `plugins` folder instead. Make sure the Jellyfin service account can read the plugin folder and DLL. Start or restart Jellyfin after copying the file. Use a build targeting the same Jellyfin release as your server; this repository currently targets 10.11.11.
 
-### 3. Confirm the plugin loaded
+#### 3. Confirm the plugin loaded
 
 Sign in with a Jellyfin administrator account and open **Dashboard > Plugins > My Plugins**. Confirm that **Radio Streaming** is listed. If it is not listed, check the Jellyfin server log for plugin-loading or file-permission errors.
 
